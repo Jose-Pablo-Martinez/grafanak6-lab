@@ -42,7 +42,7 @@ export const options = {
   },
 };
 
-export default function () {
+export default function microserviceSlaGate() {
   const headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

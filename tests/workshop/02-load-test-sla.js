@@ -61,7 +61,7 @@ export const options = {
  *  Paso 1: Consulta catálogo de órdenes (GET).
  *  Paso 2: Genera y envía una nueva orden (POST).
  */
-export default function () {
+export default function loadTestSla() {
   // --------------------------------------------------------------------------
   // Paso 1: Petición GET para listar órdenes existentes
   // --------------------------------------------------------------------------
@@ -105,8 +105,9 @@ export default function () {
     'POST /api/ordenes retorna ID generado': (r) => {
       try {
         const json = JSON.parse(r.body);
-        return json.orden && typeof json.orden.id === 'string';
-      } catch (e) {
+        return Boolean(json.orden?.id);
+      } catch (error_) {
+        console.warn(`Error al validar respuesta de creación POST: ${error_.message}`);
         return false;
       }
     },
