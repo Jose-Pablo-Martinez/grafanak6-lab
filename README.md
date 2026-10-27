@@ -1,4 +1,4 @@
-# ⚡ Grafana k6: Laboratorio de Performance & Quality Gates en Microservicios
+# Grafana k6: Laboratorio de Performance & Quality Gates en Microservicios
 
 > **Curso:** Verificación y Validación de Software  
 > **Tema:** Pruebas No Funcionales de Carga, Rendimiento y Estrés con Grafana k6  
@@ -26,7 +26,7 @@
 
 Grafana k6 es un binario nativo escrito en Go, ligero, sin dependencias pesadas de NodeJS o Java.
 
-### 🪟 Windows
+### Windows
 Ejecuta en PowerShell o CMD con permisos de usuario:
 ```powershell
 # Opción 1: Mediante Winget (Recomendada)
@@ -146,7 +146,7 @@ Los demás equipos pueden incorporar pruebas de rendimiento a sus propios micros
 
 ---
 
-## 🔄 Flujo de Trabajo con Pull Requests y Quality Gate en CI/CD
+## Flujo de Trabajo con Pull Requests y Quality Gate en CI/CD
 
 El repositorio está configurado siguiendo las mejores prácticas de GitFlow para la validación continua:
 
@@ -172,7 +172,7 @@ gitGraph
 
 ---
 
-## 🌐 Enlaces Oficiales del Ecosistema Grafana k6
+## Enlaces Oficiales del Ecosistema Grafana k6
 
 - [Documentación Oficial e Instalación de Grafana k6 OSS](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 - [Repositorio Oficial de k6 (Open Source en GitHub)](https://github.com/grafana/k6)
