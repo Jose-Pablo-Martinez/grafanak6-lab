@@ -6,7 +6,7 @@
 
 ---
 
-## 🧭 ¿Qué contiene este repositorio?
+## ¿Qué contiene este repositorio?
 
 1. **`src/server.js`**: Microservicio simulado en Node.js/Express con comportamiento realista bajo concurrencia:
    - `GET /api/health`: Endpoint de caja negra ultra rápido (~5ms) para demostrar aislamiento de fallos.
@@ -22,7 +22,7 @@
 
 ---
 
-## 🛠️ Guía de Instalación de Grafana k6 en el CLI
+## Guía de Instalación de Grafana k6 en el CLI
 
 Grafana k6 es un binario nativo escrito en Go, ligero, sin dependencias pesadas de NodeJS o Java.
 
@@ -36,7 +36,7 @@ winget install k6 --source winget
 choco install k6
 ```
 
-### 🐧 Linux (Ubuntu / Debian / WSL2)
+### Linux (Ubuntu / Debian / WSL2)
 ```bash
 sudo gpg -k
 sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
@@ -45,12 +45,12 @@ sudo apt-get update
 sudo apt-get install k6
 ```
 
-### 🍏 macOS
+### macOS
 ```bash
 brew install k6
 ```
 
-### ✅ Verificación de Instalación
+### Verificación de Instalación
 En cualquier terminal, ejecuta:
 ```bash
 k6 version
@@ -59,7 +59,7 @@ k6 version
 
 ---
 
-## 📊 Generación de Reportes HTML en Local (2 Métodos)
+## Generación de Reportes HTML en Local (2 Métodos)
 
 ### Método 1: Integrado en el Código (`tests/lib/html-report.js`)
 Todos los scripts del taller incluyen la función `handleSummary()`. Al finalizar la prueba, k6 ejecuta automáticamente esta rutina para:
@@ -81,11 +81,11 @@ K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=reporte-nativo.html k6 run tests/w
 $env:K6_WEB_DASHBOARD="true"; $env:K6_WEB_DASHBOARD_EXPORT="reporte-nativo.html"; k6 run tests/workshop/02-load-test-sla.js
 ```
 
-> 💡 **En Vivo:** Mientras la prueba se está ejecutando, abre tu navegador en **[http://127.0.0.1:5665](http://127.0.0.1:5665)** para ver las curvas de latencia, usuarios virtuales y tasa de peticiones en tiempo real.
+> **En Vivo:** Mientras la prueba se está ejecutando, abre tu navegador en **[http://127.0.0.1:5665](http://127.0.0.1:5665)** para ver las curvas de latencia, usuarios virtuales y tasa de peticiones en tiempo real.
 
 ---
 
-## 🧪 Guía del Mini Laboratorio (Paso a Paso en 20 Minutos)
+## Guía del Mini Laboratorio (Paso a Paso en 20 Minutos)
 
 ### Paso 1: Instalar dependencias y levantar el microservicio
 Abre una terminal en la raíz del proyecto:
@@ -112,7 +112,7 @@ npm run test:load
 ```
 *Genera `reporte-load-sla.html`.*
 
-#### 🔍 ¿Cómo interpretar la tabla de la terminal?
+####  ¿Cómo interpretar la tabla de la terminal?
 ```text
 ✓ http_req_duration..............: avg=78.4ms  min=41.2ms med=73.5ms max=320.1ms p(90)=112.4ms p(95)=189.6ms
 ✓ http_req_failed................: 0.00%  ✓ 0  ✗ 1850
@@ -129,7 +129,7 @@ Ejecuta la prueba de estrés:
 npm run test:stress
 ```
 
-#### 🚨 ¿Qué sucede durante la prueba?
+####  ¿Qué sucede durante la prueba?
 1. Al superar los 35 usuarios activos concurrentes, el pool de conexiones de la base de datos simulada en `src/server.js` se satura.
 2. La latencia de `/api/ordenes` escala de 200ms a **más de 1800ms**.
 3. En la terminal verás la alerta roja **`✗ http_req_duration{endpoint:ordenes_db}... p(95)<500`**, señalando el incumplimiento del Quality Gate.
@@ -143,6 +143,32 @@ Los demás equipos pueden incorporar pruebas de rendimiento a sus propios micros
 1. Consulta la carpeta [`templates-equipos/`](templates-equipos/README-TEMPLATES.md).
 2. Copia `templates-equipos/microservice-sla-gate.template.js` o `api-crud-flow.template.js` a tu repositorio.
 3. Configura el archivo `.github/workflows/ci.yml` para que k6 evalúe la API antes de permitir fusionar cambios a `main`.
+
+---
+
+## 🔄 Flujo de Trabajo con Pull Requests y Quality Gate en CI/CD
+
+El repositorio está configurado siguiendo las mejores prácticas de GitFlow para la validación continua:
+
+```mermaid
+gitGraph
+   commit id: "Base main"
+   branch develop
+   checkout develop
+   commit id: "feat: endpoint metricas & suite k6"
+   checkout main
+   merge develop id: "PR #1 (Quality Gate Passed)"
+```
+
+1. **Desarrollo en rama `develop`**:
+   Las nuevas características, endpoints y optimizaciones se desarrollan en `develop`.
+2. **Apertura de Pull Request hacia `main`**:
+   Al enviar un PR de `develop` a `main`, GitHub Actions dispara automáticamente el job `performance-gate`.
+3. **Validación Automática de SLAs**:
+   - Si la prueba cumple `p(95) < 500ms` y `tasa de fallo < 1%`, el PR recibe el check verde `✓` permitiendo la fusión.
+   - Si se introduce un cuello de botella arquitectónico que degrade el servicio, el Quality Gate falla y bloquea el merge.
+4. **Descarga de Evidencias**:
+   Los reportes gráficos `reporte-load-sla.html` y `dashboard-ci.html` se guardan automáticamente en la pestaña **Summary > Artifacts** del workflow.
 
 ---
 
