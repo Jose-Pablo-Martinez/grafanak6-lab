@@ -42,7 +42,7 @@ export const options = {
  * FUNCIÓN DEFAULT:
  * Código que ejecuta cada Usuario Virtual (VU) en bucle continuo durante los 15s.
  */
-export default function () {
+export default function smokeTest() {
   // --------------------------------------------------------------------------
   // 1. Verificación del endpoint de salud (Health Check)
   // --------------------------------------------------------------------------
@@ -57,7 +57,8 @@ export default function () {
     'GET /api/health contiene status "ok"': (r) => {
       try {
         return JSON.parse(r.body).status === 'ok';
-      } catch (e) {
+      } catch (error_) {
+        console.warn(`Healthcheck parse error: ${error_.message}`);
         return false;
       }
     },
@@ -81,7 +82,8 @@ export default function () {
       try {
         const json = JSON.parse(r.body);
         return Array.isArray(json.data) && json.data.length > 0;
-      } catch (e) {
+      } catch (error_) {
+        console.warn(`Error al validar catálogo de órdenes: ${error_.message}`);
         return false;
       }
     },
