@@ -49,7 +49,7 @@ export const options = {
   },
 };
 
-export default function () {
+export default function apiCrudFlow() {
   const commonHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -78,8 +78,9 @@ export default function () {
       try {
         const body = JSON.parse(res.body);
         // Extrae el ID según la convención de la API de cada equipo (id o _id)
-        createdId = body.id || (body.data && body.data.id) || `temp-${Date.now()}`;
-      } catch (e) {
+        createdId = body.id || body.data?.id || `temp-${Date.now()}`;
+      } catch (error_) {
+        console.warn(`Error al parsear respuesta JSON: ${error_.message}`);
         createdId = `temp-${Date.now()}`;
       }
     }

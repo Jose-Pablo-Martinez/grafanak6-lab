@@ -65,7 +65,7 @@ export const options = {
  * Ejecuta alternadamente peticiones a ambos endpoints etiquetándolos con TAGS
  * para que k6 desglose las métricas de forma independiente.
  */
-export default function () {
+export default function stressTest() {
   // --------------------------------------------------------------------------
   // 1. Petición al Endpoint de Aislamiento / Health (Tags: endpoint: 'health')
   // --------------------------------------------------------------------------

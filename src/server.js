@@ -7,6 +7,9 @@
 const express = require('express');
 const app = express();
 
+// Deshabilita la cabecera X-Powered-By para evitar divulgación de información (SonarQube)
+app.disable('x-powered-by');
+
 const PORT = process.env.PORT || 3000;
 
 // Middleware para parsear cuerpos JSON
