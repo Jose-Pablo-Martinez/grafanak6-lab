@@ -137,6 +137,23 @@ app.post('/api/ordenes', async (req, res) => {
   });
 });
 
+/**
+ * GET /api/metricas
+ * Endpoint de observabilidad: expone métricas en tiempo real del microservicio
+ * (memoria, uptime, peticiones activas) para correlacionar con las corridas de k6.
+ */
+app.get('/api/metricas', (req, res) => {
+  res.status(200).json({
+    activeRequests,
+    uptimeSeconds: Math.floor(process.uptime()),
+    memoryUsageMB: {
+      rss: Math.round(process.memoryUsage().rss / 1024 / 1024 * 100) / 100,
+      heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024 * 100) / 100
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Inicio del servidor
 const server = app.listen(PORT, () => {
   console.log(`[API Microservicio] Servidor escuchando en http://localhost:${PORT}`);
@@ -144,6 +161,7 @@ const server = app.listen(PORT, () => {
   console.log(`  - GET  /api/health   (Caja negra / Aislamiento, ~5ms)`);
   console.log(`  - GET  /api/ordenes  (Simulación DB con contención progresiva)`);
   console.log(`  - POST /api/ordenes  (Creación de órdenes, validación 400/201)`);
+  console.log(`  - GET  /api/metricas (Telemetría y observabilidad en tiempo real)`);
 });
 
 module.exports = { app, server };

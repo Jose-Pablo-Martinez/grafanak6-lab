@@ -146,6 +146,32 @@ Los demás equipos pueden incorporar pruebas de rendimiento a sus propios micros
 
 ---
 
+## 🔄 Flujo de Trabajo con Pull Requests y Quality Gate en CI/CD
+
+El repositorio está configurado siguiendo las mejores prácticas de GitFlow para la validación continua:
+
+```mermaid
+gitGraph
+   commit id: "Base main"
+   branch develop
+   checkout develop
+   commit id: "feat: endpoint metricas & suite k6"
+   checkout main
+   merge develop id: "PR #1 (Quality Gate Passed)"
+```
+
+1. **Desarrollo en rama `develop`**:
+   Las nuevas características, endpoints y optimizaciones se desarrollan en `develop`.
+2. **Apertura de Pull Request hacia `main`**:
+   Al enviar un PR de `develop` a `main`, GitHub Actions dispara automáticamente el job `performance-gate`.
+3. **Validación Automática de SLAs**:
+   - Si la prueba cumple `p(95) < 500ms` y `tasa de fallo < 1%`, el PR recibe el check verde `✓` permitiendo la fusión.
+   - Si se introduce un cuello de botella arquitectónico que degrade el servicio, el Quality Gate falla y bloquea el merge.
+4. **Descarga de Evidencias**:
+   Los reportes gráficos `reporte-load-sla.html` y `dashboard-ci.html` se guardan automáticamente en la pestaña **Summary > Artifacts** del workflow.
+
+---
+
 ## 🌐 Enlaces Oficiales del Ecosistema Grafana k6
 
 - [Documentación Oficial e Instalación de Grafana k6 OSS](https://grafana.com/docs/k6/latest/set-up/install-k6/)
