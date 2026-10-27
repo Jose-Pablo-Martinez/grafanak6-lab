@@ -19,6 +19,12 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      ejecutar_estres:
+        description: '¿Ejecutar también prueba de estrés extremo (Breaking Point hasta 200 VUs)?'
+        type: boolean
+        default: false
 
 jobs:
   performance-gate:
@@ -57,19 +63,33 @@ jobs:
       - name: Instalar Grafana k6
         uses: grafana/setup-k6-action@v1
 
-      # 6. Ejecutar la prueba de carga con SLAs y generación dual de reportes
-      - name: Ejecutar Prueba de Carga y Evaluación de SLAs
+      # 6. Ejecutar Smoke Test (Filtro temprano / Fail-Fast)
+      - name: Paso 1 - Smoke Test (Filtro temprano de disponibilidad)
+        run: |
+          k6 run tests/workshop/01-smoke-test.js
+
+      # 7. Ejecutar la prueba de carga con SLAs y generación dual de reportes
+      - name: Paso 2 - Prueba de Carga con SLAs (Quality Gate)
         run: |
           K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=dashboard-ci.html k6 run -e CI_QUICK=true tests/workshop/02-load-test-sla.js
 
-      # 7. Subir reportes como artefactos de GitHub (siempre se ejecuta, incluso si falla k6)
+      # 8. Ejecutar Prueba de Estrés (Solo cuando se activa manualmente vía workflow_dispatch)
+      - name: Paso 3 (Demostración) - Prueba de Estrés y Punto de Ruptura
+        if: ${{ github.event.inputs.ejecutar_estres == 'true' }}
+        continue-on-error: true # Permite conservar los artefactos aunque la prueba alcance el punto de saturación
+        run: |
+          k6 run -e CI_QUICK=true tests/workshop/03-stress-breaking-point.js
+
+      # 9. Subir reportes como artefactos de GitHub (siempre se ejecuta)
       - name: Publicar Reportes HTML como Artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: k6-performance-reports
           path: |
+            reporte-smoke.html
             reporte-load-sla.html
+            reporte-stress.html
             dashboard-ci.html
             api-server.log
           retention-days: 14
