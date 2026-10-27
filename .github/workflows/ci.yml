@@ -1,0 +1,75 @@
+# ============================================================================
+# PIPELINE DE INTEGRACIÓN CONTINUA: PERFORMANCE QUALITY GATE CON GRAFANA K6
+# ============================================================================
+# Este pipeline actúa como barrera de calidad de rendimiento (Quality Gate)
+# en la arquitectura de microservicios:
+#  - Se dispara al realizar Push a 'main' o Pull Requests dirigidos a 'main' (desde 'develop').
+#  - Levanta la API en el runner efímero de GitHub Actions.
+#  - Ejecuta la suite de carga de Grafana k6 verificando que los SLAs se cumplan.
+#  - Bloquea la fusión del PR si la latencia p(95) supera 500ms o hay >1% de errores.
+#  - Publica los reportes HTML (benc-uk y Dashboard nativo) como artefactos descargables.
+# ============================================================================
+
+name: Performance Quality Gate (Grafana k6)
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  performance-gate:
+    name: K6 Performance & SLA Gate
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Clonar el repositorio
+      - name: Descargar código fuente (Checkout)
+        uses: actions/checkout@v4
+
+      # 2. Configurar entorno de Node.js v20
+      - name: Configurar Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      # 3. Instalación limpia de dependencias
+      - name: Instalar dependencias de la API
+        run: npm ci
+
+      # 4. Levantar la API en segundo plano y esperar a que responda el Healthcheck
+      - name: Iniciar API del Microservicio y esperar disponibilidad
+        run: |
+          nohup npm start > api-server.log 2>&1 &
+          echo "Esperando que el microservicio esté listo en http://localhost:3000/api/health..."
+          curl --retry 10 --retry-delay 2 --retry-connrefused -s -f http://localhost:3000/api/health || {
+            echo "❌ La API no respondió a tiempo. Logs del servidor:"
+            cat api-server.log
+            exit 1
+          }
+          echo "✅ API lista y respondiendo 200 OK."
+
+      # 5. Instalar Grafana k6 en el runner de Ubuntu
+      - name: Instalar Grafana k6
+        uses: grafana/setup-k6-action@v1
+
+      # 6. Ejecutar la prueba de carga con SLAs y generación dual de reportes
+      - name: Ejecutar Prueba de Carga y Evaluación de SLAs
+        run: |
+          K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=dashboard-ci.html k6 run -e CI_QUICK=true tests/workshop/02-load-test-sla.js
+
+      # 7. Subir reportes como artefactos de GitHub (siempre se ejecuta, incluso si falla k6)
+      - name: Publicar Reportes HTML como Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-performance-reports
+          path: |
+            reporte-load-sla.html
+            dashboard-ci.html
+            api-server.log
+          retention-days: 14

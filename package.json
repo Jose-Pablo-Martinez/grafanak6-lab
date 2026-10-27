@@ -1,0 +1,27 @@
+{
+  "name": "grafana-k6-microservices-lab",
+  "version": "1.0.0",
+  "description": "Laboratorio y demostración práctica de Grafana k6 para pruebas de carga, estrés y SLAs en microservicios",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "test:smoke": "k6 run tests/workshop/01-smoke-test.js",
+    "test:load": "k6 run tests/workshop/02-load-test-sla.js",
+    "test:stress": "k6 run tests/workshop/03-stress-breaking-point.js",
+    "test:dashboard": "K6_WEB_DASHBOARD=true K6_WEB_DASHBOARD_EXPORT=dashboard-report.html k6 run tests/workshop/02-load-test-sla.js"
+  },
+  "keywords": [
+    "k6",
+    "performance-testing",
+    "grafana-k6",
+    "stress-testing",
+    "microservices",
+    "sla",
+    "load-testing"
+  ],
+  "author": "Jose Pablo Martinez",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
