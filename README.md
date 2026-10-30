@@ -180,3 +180,5 @@ gitGraph
 - [Grafana k6 Studio (Aplicación de escritorio para grabar scripts)](https://grafana.com/docs/k6-studio/latest/)
 - [k6 Operator para pruebas distribuidas en Kubernetes](https://github.com/grafana/k6-operator)
 - [k6 HTML Reporter (benc-uk/k6-reporter)](https://github.com/benc-uk/k6-reporter)
+
+Hola esto es un cambio de prueba solo para crear un pull request de demostración. 

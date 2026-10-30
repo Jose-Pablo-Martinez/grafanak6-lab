@@ -2,57 +2,88 @@
 
 Esta carpeta contiene **plantillas profesionales de pruebas de rendimiento listas para producción**. Han sido diseñadas para que los demás equipos del curso puedan integrarlas en sus respectivos microservicios sin tener que programar los scripts de k6 desde cero.
 
+Cubren los **4 Tipos Canónicos de Pruebas No Funcionales de Rendimiento** (según el Modelo en V de Verificación y Validación de Software), más plantillas complementarias para flujos transaccionales y pipelines CI/CD.
+
 ---
 
-## 📑 Catálogo de Plantillas
+## 📑 Catálogo de los 4 Casos Esenciales de Prueba
 
-| Archivo | Tipo de Prueba | Caso de Uso Ideal |
-| :--- | :--- | :--- |
-| `microservice-sla-gate.template.js` | **Quality Gate CI/CD** | Evaluar SLAs en Pull Requests (p95 < 500ms, errores < 1%). Exporta reporte HTML y JUnit XML. |
-| `api-crud-flow.template.js` | **Flujo Transaccional CRUD** | APIs REST completas (POST -> GET -> PUT -> DELETE) con grupos (`group()`) y métricas de negocio (`Trend`). |
-| `stress-spike-profile.template.js` | **Estrés y Picos (Spike)** | Pruebas de resiliencia con múltiples `scenarios` (`ramping-vus` y `ramping-arrival-rate`). |
+| # | Tipo de Prueba | Archivo de Plantilla | Carga & Duración Típica | Objetivo Principal |
+| :---: | :--- | :--- | :--- | :--- |
+| **1** | **Smoke Test** *(Prueba de Humo)* | `smoke-test.template.js` | 1 - 5 VUs / 30s | **Sanity Check:** Verificar que el microservicio está vivo, bien configurado y que los endpoints responden antes de correr pruebas mayores. |
+| **2** | **Load Test** *(Prueba de Carga Nominal)* | `load-test.template.js` | 50 VUs / 3 - 5 min | **Cumplimiento de SLAs:** Evaluar el microservicio bajo el volumen de usuarios esperado en producción ($p95 < 500\text{ms}$, error $<1\%$). |
+| **3** | **Stress / Spike Test** *(Estrés y Picos)* | `stress-spike-profile.template.js` | 100 - 200+ VUs / Picos | **Punto de Ruptura (Breaking Point):** Descubrir los límites máximos del sistema, contención de base de datos y capacidad de auto-recuperación. |
+| **4** | **Soak Test** *(Resistencia / Endurance)* | `soak-test.template.js` | 25 - 35 VUs / 15m - 4h | **Estabilidad en el Tiempo:** Detectar fugas de memoria (*memory leaks*), fugas de conexiones en el pool (*connection leaks*) y degradación paulatina. |
+
+### 🛠️ Plantillas Complementarias
+- **`microservice-sla-gate.template.js`**: Plantilla especializada para **Quality Gate en CI/CD** con exportación triple (Terminal stdout + HTML visual + **JUnit XML** para GitHub Actions / GitLab).
+- **`api-crud-flow.template.js`**: Plantilla de **Flujo Transaccional Encadenado** (POST $\rightarrow$ GET $\rightarrow$ PUT $\rightarrow$ DELETE) usando `group()` y métricas personalizadas `Trend`.
 
 ---
 
 ## 🚀 ¿Cómo usar estas plantillas en tu microservicio?
 
-### Paso 1: Copia el script a tu repositorio
-Copia la plantilla que necesites a una carpeta dentro de tu repositorio (por ejemplo `tests/performance/`):
+### Paso 1: Copia la plantilla que necesites a tu repositorio
+Copia el script a la carpeta de pruebas de tu proyecto (por ejemplo `tests/performance/`):
 
 ```bash
+# Ejemplo: Copiar la prueba de carga
 mkdir -p tests/performance
-cp templates-equipos/microservice-sla-gate.template.js tests/performance/load-test.js
+cp templates-equipos/load-test.template.js tests/performance/load-test.js
 ```
 
-### Paso 2: Ejecuta pasando la URL y credenciales de tu API
-Todas las plantillas están **100% parametrizadas** mediante variables de entorno de k6 (`__ENV` o bandera `-e`):
+### Paso 2: Ejecución parametrizada (100% configurable)
+Todas las plantillas están parametrizadas con variables de entorno de k6 (`__ENV` o bandera `-e`). No necesitas modificar el código para cambiar URLs, usuarios o tiempos:
 
+#### 1. Ejecutar Smoke Test (Prueba de Humo)
 ```bash
-# Ejemplo básico apuntando a tu microservicio local
-k6 run -e BASE_URL=http://localhost:8080 tests/performance/load-test.js
+# Básico
+k6 run -e BASE_URL=http://localhost:8080 smoke-test.template.js
 
-# Ejemplo con autenticación JWT o Token Bearer
-k6 run -e BASE_URL=http://localhost:8080 -e AUTH_TOKEN="Bearer eyJhbGciOi..." tests/performance/load-test.js
-
-# Ejemplo para api-crud-flow apuntando a la ruta de tu entidad
-k6 run -e BASE_URL=http://localhost:8080 -e ENDPOINT_PATH="/api/v1/productos" tests/performance/api-crud-flow.template.js
+# Con ruta de salud personalizada y token
+k6 run -e BASE_URL=http://localhost:8080 -e HEALTH_PATH=/health -e AUTH_TOKEN="Bearer xyz" smoke-test.template.js
 ```
 
-### Paso 3: Personalizar el Body o Headers (Opcional)
-Abre el archivo copiado y personaliza las siguientes secciones según la especificación OpenAPI / Swagger de tu equipo:
+#### 2. Ejecutar Load Test (Prueba de Carga con SLAs)
+```bash
+# Con 50 VUs nominales (por defecto)
+k6 run -e BASE_URL=http://localhost:8080 -e ENDPOINT_PATH=/api/v1/productos load-test.template.js
 
-1. **Campos del JSON en peticiones POST/PUT**:
-   Modifica el objeto enviado en `JSON.stringify({...})` para que coincida con el contrato de tu API.
-2. **Camino de extracción del ID**:
-   En `api-crud-flow.template.js`, ajusta si tu microservicio devuelve `body.id`, `body._id` o `body.data.id`.
-3. **SLAs / Thresholds**:
-   Si tu equipo tiene requerimientos más estrictos o flexibles (por ejemplo `p(95) < 300ms`), edita la sección `thresholds` en el objeto `options`.
+# Ajustando a 80 VUs
+k6 run -e BASE_URL=http://localhost:8080 -e TARGET_VUS=80 load-test.template.js
+```
+
+#### 3. Ejecutar Stress & Spike Test (Estrés y Picos)
+```bash
+k6 run -e BASE_URL=http://localhost:8080 -e TARGET_PATH=/api/v1/ordenes stress-spike-profile.template.js
+```
+
+#### 4. Ejecutar Soak Test (Prueba de Resistencia / Endurance)
+```bash
+# Corrida rápida de resistencia (15 minutos por defecto para demos de laboratorio)
+k6 run -e BASE_URL=http://localhost:8080 -e ENDPOINT_PATH=/api/v1/ordenes soak-test.template.js
+
+# Corrida de larga duración (ej. 1 hora con 35 VUs)
+k6 run -e BASE_URL=http://localhost:8080 -e SOAK_DURATION=1h -e TARGET_VUS=35 soak-test.template.js
+```
 
 ---
 
-## Reportes Generados Automáticamente
+## ⚙️ Paso 3: Personalización Opcional del Contrato (Body y Headers)
+Abre el archivo copiado en tu editor y personaliza las siguientes secciones según el contrato de tu microservicio:
 
-Al terminar la corrida, las plantillas generarán:
-1. **Consola Interactiva**: Tabla resumen con percentiles (p90, p95, p99), tasa de error y checks.
-2. **Archivo HTML**: Reporte gráfico autocontenido (`reporte-*.html`) que puedes abrir directamente con doble clic en tu navegador.
-3. **JUnit XML** (`junit-results.xml` en la plantilla de CI/CD): Permite que herramientas de integración continua (GitHub Actions, GitLab CI, Jenkins) publiquen los resultados en la pestaña de Tests.
+1. **Campos del JSON en peticiones POST/PUT**:
+   Modifica el objeto enviado en `JSON.stringify({...})` para que coincida con el esquema esperado por tu endpoint.
+2. **Camino de extracción de identificadores**:
+   En flujos encadenados (`api-crud-flow.template.js`), ajusta si tu API responde con `body.id`, `body._id` o `body.data.id`.
+3. **Thresholds y SLAs**:
+   Si tu equipo tiene acuerdos más estrictos (por ejemplo $p95 < 250\text{ms}$ o tasa de fallo $< 0.5\%$), edita el objeto `thresholds` en `options`.
+
+---
+
+## 📊 Reportes Generados Automáticamente
+
+Al terminar la corrida, cada plantilla generará:
+1. **Consola Interactiva (`stdout`)**: Tabla resumen con percentiles ($p90, p95, p99$), tasa de error y checks.
+2. **Archivo HTML Autocontenido (`reporte-*.html`)**: Reporte interactivo con gráficos que puedes abrir directamente con doble clic en tu navegador.
+3. **JUnit XML** (`junit-*.xml` en las plantillas de Load y CI/CD): Permite que pipelines como GitHub Actions, GitLab CI o Jenkins publiquen los resultados en la pestaña de pruebas.
